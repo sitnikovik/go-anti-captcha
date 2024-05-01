@@ -1,9 +1,11 @@
 package anticaptcha
 
 import (
-	antiCaptchaErrors "github.com/sitnikovik/go-anti-captcha/client/anticaptcha/errors"
 	"os"
 	"testing"
+	"time"
+
+	antiCaptchaErrors "github.com/sitnikovik/go-anti-captcha/client/anticaptcha/errors"
 
 	"github.com/sitnikovik/go-anti-captcha/internal/config"
 )
@@ -33,7 +35,7 @@ func TestClient_ImageToText(t *testing.T) {
 
 		tkn := config.FromFile().AntiCaptcha.Token
 		c := NewClient(tkn)
-		task, err := c.ImageToText(bb, true)
+		task, err := c.ImageToText(bb, 10*time.Second)
 		if err != nil {
 			t.Errorf("ImageToText() error = %v, want nil", err)
 			return
@@ -54,7 +56,7 @@ func TestClient_ImageToText(t *testing.T) {
 
 		tkn := config.FromFile().AntiCaptcha.Token
 		c := NewClient(tkn)
-		task, err := c.ImageToText(bb, false)
+		task, err := c.ImageToText(bb, 0)
 		if err != nil {
 			t.Errorf("ImageToText() error = %v, want nil", err)
 			return

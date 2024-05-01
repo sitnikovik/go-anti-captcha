@@ -106,6 +106,9 @@ const (
 	taskCanceledTxt = "AntiGate task was canceled by worker"
 )
 
+// ErrResponseTimeout is error for check result exit by timeout
+var ErrResponseTimeout = fmt.Errorf("get anticaptcha result exit by timeout")
+
 // ByErrorID makes error by id.
 // See more https://anti-captcha.com/apidoc/errors
 func ByErrorID(id int) error {
@@ -187,4 +190,9 @@ func IsIpNotAllowed(err error) bool {
 // IsCaptchaUnsolvable returns true if error is about captcha unsolvable
 func IsCaptchaUnsolvable(err error) bool {
 	return err.Error() == ByErrorID(captchaUnsolvableID).Error()
+}
+
+// IsCheckResultTimeout returns true if error is about anticaptcha checking result is exit by timeout
+func IsCheckResultTimeout(err error) bool {
+	return err.Error() == ErrResponseTimeout.Error()
 }

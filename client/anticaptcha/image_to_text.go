@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/sitnikovik/go-anti-captcha/client/anticaptcha/response/task"
 	"github.com/sitnikovik/go-anti-captcha/client/anticaptcha/response/task/status"
-	"net/http"
-	"sync"
 
 	taskType "github.com/sitnikovik/go-anti-captcha/internal/anticaptcha/task_type"
 
@@ -16,8 +17,11 @@ import (
 	http2 "github.com/sitnikovik/go-anti-captcha/internal/http"
 )
 
+// imageToTextRequestInterval is an interval to do request to AntiCaptcha API
+const imageToTextRequestInterval = 1 * time.Second
+
 // ImageToText resolves image captcha and returns solution
-func (c *client) ImageToText(bb []byte, waitForSolution bool) (*task.Task, error) {
+func (c *client) ImageToText(bb []byte, timeoutInterval time.Duration) (*task.Task, error) {
 	var err error
 
 	body := struct {
@@ -53,34 +57,28 @@ func (c *client) ImageToText(bb []byte, waitForSolution bool) (*task.Task, error
 		return nil, errors.ByErrorID(taskResult.ErrorID)
 	}
 
-	if !waitForSolution {
+	if timeoutInterval <= 0 {
 		return &taskResult, nil
 	}
 
-	n := 5
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		var tmpTask *task.Task
-		defer wg.Done()
-		for n > 0 {
+	ticker := time.NewTicker(imageToTextRequestInterval)
+	timer := time.NewTimer(timeoutInterval)
+	var tmpTask *task.Task
+	for {
+		select {
+		case <-ticker.C:
 			tmpTask, err = c.GetTaskByID(taskResult.TaskID)
 			if err != nil {
-				return
+				return nil, err
 			}
-
 			if tmpTask.Status == status.Ready {
 				taskResult = *tmpTask
-				return
+				ticker.Stop()
+
+				return &taskResult, nil
 			}
-			n--
+		case <-timer.C:
+			return nil, errors.ErrResponseTimeout
 		}
-	}()
-	wg.Wait()
-
-	if taskResult.ErrorID != 0 || taskResult.Solution.Text == "" {
-		return nil, errors.ByErrorID(taskResult.ErrorID)
 	}
-
-	return &taskResult, err
 }
