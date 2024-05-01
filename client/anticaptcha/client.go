@@ -1,6 +1,10 @@
 package anticaptcha
 
-import "github.com/sitnikovik/go-anti-captcha/client/anticaptcha/response/task"
+import (
+	"time"
+
+	"github.com/sitnikovik/go-anti-captcha/client/anticaptcha/response/task"
+)
 
 // baseUrl base AntiCaptcha url to
 const baseUrl = "https://api.anti-captcha.com"
@@ -11,7 +15,7 @@ type Client interface {
 	GetBalance() (float64, error)
 
 	// ImageToText resolves image captcha and returns solution
-	ImageToText(bb []byte, waitForSolution bool) (*task.Task, error)
+	ImageToText(bb []byte, timeoutInterval time.Duration) (*task.Task, error)
 
 	// GetTaskByID returns task result by id
 	GetTaskByID(id int) (*task.Task, error)
